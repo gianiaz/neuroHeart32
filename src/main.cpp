@@ -44,7 +44,7 @@
 #define JOY_MIN_MOVE_DELTA 250
 #define JOY_MAX_MOVE_DELTA 900
 #define JOY_RELEASE_DELTA 180
-#define JOY_DEBUG_INTERVAL_MS 300
+#define JOY_DEBUG_INTERVAL_MS 1000
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 WiFiClient wifiClient;
@@ -644,6 +644,14 @@ void handleMqttStreaming() {
   const unsigned long now = millis();
   if (now - lastMqttPublishAt >= MQTT_PUBLISH_INTERVAL_MS) {
     lastMqttPublishAt = now;
+    Serial.print(F("EEG: tick streaming | interval ms: "));
+    Serial.print(MQTT_PUBLISH_INTERVAL_MS);
+    Serial.print(F(" | activity: "));
+    Serial.print(mqttActivityName());
+    Serial.print(F(" | WiFi: "));
+    Serial.print(wifiStatusName(WiFi.status()));
+    Serial.print(F(" | MQTT: "));
+    Serial.println(mqttClient.connected() ? F("connesso") : F("non connesso"));
     sendSimulatedEEG();
   }
 }
