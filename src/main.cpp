@@ -27,7 +27,7 @@
 #define MQTT_TOPIC "brain/data"
 #define MQTT_CONNECT_TIMEOUT_MS 10000
 #define MQTT_RECONNECT_INTERVAL_MS 10000
-#define MQTT_PUBLISH_INTERVAL_MS 2000
+#define MQTT_PUBLISH_INTERVAL_MS 1000
 
 struct LogConfig {
   bool joystickRaw;
