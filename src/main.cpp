@@ -29,6 +29,24 @@
 #define MQTT_RECONNECT_INTERVAL_MS 10000
 #define MQTT_PUBLISH_INTERVAL_MS 2000
 
+struct LogConfig {
+  bool joystickRaw;
+  bool joystickActions;
+  bool wifi;
+  bool wifiScan;
+  bool mqtt;
+  bool eeg;
+};
+
+const LogConfig LOG = {
+  false, // joystickRaw
+  true,  // joystickActions
+  true,  // wifi
+  true,  // wifiScan
+  true,  // mqtt
+  true   // eeg
+};
+
 // Configurazione pin I2C per ESP32-C3 Super Mini
 #define I2C_SDA 8
 #define I2C_SCL 9
@@ -290,6 +308,10 @@ const char *wifiDisconnectReasonName(int reason) {
 }
 
 void onWifiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+  if (!LOG.wifi) {
+    return;
+  }
+
   switch (event) {
     case ARDUINO_EVENT_WIFI_STA_START:
       Serial.println(F("WiFi event: STA_START"));
@@ -315,6 +337,10 @@ void onWifiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 }
 
 void scanWifiForDebug() {
+  if (!LOG.wifiScan) {
+    return;
+  }
+
   Serial.println(F("WiFi scan: avvio"));
   const int networkCount = WiFi.scanNetworks(false, true);
 
@@ -374,11 +400,13 @@ void connectToWifi() {
   wifiUiState = WIFI_UI_CONNECTING;
   lastWifiDisconnectReason = -1;
 
-  Serial.println(F("WiFi: avvio connessione"));
-  Serial.print(F("WiFi: SSID: "));
-  Serial.println(WIFI_SSID);
-  Serial.print(F("WiFi: timeout ms: "));
-  Serial.println(WIFI_CONNECT_TIMEOUT_MS);
+  if (LOG.wifi) {
+    Serial.println(F("WiFi: avvio connessione"));
+    Serial.print(F("WiFi: SSID: "));
+    Serial.println(WIFI_SSID);
+    Serial.print(F("WiFi: timeout ms: "));
+    Serial.println(WIFI_CONNECT_TIMEOUT_MS);
+  }
 
   WiFi.onEvent(onWifiEvent);
   WiFi.persistent(false);
@@ -388,8 +416,10 @@ void connectToWifi() {
   WiFi.disconnect(true, true);
   delay(300);
 
-  Serial.print(F("WiFi: MAC STA: "));
-  Serial.println(WiFi.macAddress());
+  if (LOG.wifi) {
+    Serial.print(F("WiFi: MAC STA: "));
+    Serial.println(WiFi.macAddress());
+  }
 
   scanWifiForDebug();
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -404,21 +434,25 @@ void connectToWifi() {
     const wl_status_t status = WiFi.status();
 
     if (status != lastStatus || now - lastLogAt >= WIFI_CONNECT_LOG_INTERVAL_MS) {
-      Serial.print(F("WiFi: stato: "));
-      Serial.print(wifiStatusName(status));
-      Serial.print(F(" | elapsed ms: "));
-      Serial.println(now - startedAt);
+      if (LOG.wifi) {
+        Serial.print(F("WiFi: stato: "));
+        Serial.print(wifiStatusName(status));
+        Serial.print(F(" | elapsed ms: "));
+        Serial.println(now - startedAt);
+      }
       lastStatus = status;
       lastLogAt = now;
     }
 
     if (status == WL_CONNECTED) {
       wifiUiState = WIFI_UI_CONNECTED;
-      Serial.println(F("WiFi: connesso"));
-      Serial.print(F("WiFi: IP: "));
-      Serial.println(WiFi.localIP());
-      Serial.print(F("WiFi: RSSI: "));
-      Serial.println(WiFi.RSSI());
+      if (LOG.wifi) {
+        Serial.println(F("WiFi: connesso"));
+        Serial.print(F("WiFi: IP: "));
+        Serial.println(WiFi.localIP());
+        Serial.print(F("WiFi: RSSI: "));
+        Serial.println(WiFi.RSSI());
+      }
       drawCurrentScreen();
       return;
     }
@@ -432,14 +466,16 @@ void connectToWifi() {
   }
 
   wifiUiState = WIFI_UI_DISCONNECTED;
-  Serial.println(F("WiFi: timeout, connessione non riuscita"));
-  Serial.print(F("WiFi: ultimo stato: "));
-  Serial.println(wifiStatusName(WiFi.status()));
-  Serial.print(F("WiFi: ultimo motivo disconnessione: "));
-  Serial.print(lastWifiDisconnectReason);
-  Serial.print(F(" ("));
-  Serial.print(wifiDisconnectReasonName(lastWifiDisconnectReason));
-  Serial.println(F(")"));
+  if (LOG.wifi) {
+    Serial.println(F("WiFi: timeout, connessione non riuscita"));
+    Serial.print(F("WiFi: ultimo stato: "));
+    Serial.println(wifiStatusName(WiFi.status()));
+    Serial.print(F("WiFi: ultimo motivo disconnessione: "));
+    Serial.print(lastWifiDisconnectReason);
+    Serial.print(F(" ("));
+    Serial.print(wifiDisconnectReasonName(lastWifiDisconnectReason));
+    Serial.println(F(")"));
+  }
   WiFi.disconnect(false);
   drawCurrentScreen();
 }
@@ -477,43 +513,55 @@ bool connectToMqtt() {
   }
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println(F("MQTT: WiFi non connesso, impossibile connettere il broker"));
+    if (LOG.mqtt) {
+      Serial.println(F("MQTT: WiFi non connesso, impossibile connettere il broker"));
+    }
     return false;
   }
 
   const unsigned long now = millis();
   if (lastMqttConnectAttemptAt != 0 && now - lastMqttConnectAttemptAt < MQTT_RECONNECT_INTERVAL_MS) {
-    Serial.print(F("MQTT: riconnessione in cooldown, ms rimanenti: "));
-    Serial.println(MQTT_RECONNECT_INTERVAL_MS - (now - lastMqttConnectAttemptAt));
+    if (LOG.mqtt) {
+      Serial.print(F("MQTT: riconnessione in cooldown, ms rimanenti: "));
+      Serial.println(MQTT_RECONNECT_INTERVAL_MS - (now - lastMqttConnectAttemptAt));
+    }
     return false;
   }
 
   lastMqttConnectAttemptAt = now;
 
-  Serial.println(F("MQTT: avvio connessione"));
-  Serial.print(F("MQTT: host: "));
-  Serial.print(MQTT_HOST);
-  Serial.print(F(":"));
-  Serial.println(MQTT_PORT);
-  Serial.print(F("MQTT: user: "));
-  Serial.println(MQTT_USER);
+  if (LOG.mqtt) {
+    Serial.println(F("MQTT: avvio connessione"));
+    Serial.print(F("MQTT: host: "));
+    Serial.print(MQTT_HOST);
+    Serial.print(F(":"));
+    Serial.println(MQTT_PORT);
+    Serial.print(F("MQTT: user: "));
+    Serial.println(MQTT_USER);
+  }
 
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
-  Serial.println(F("MQTT: tentativo singolo"));
+  if (LOG.mqtt) {
+    Serial.println(F("MQTT: tentativo singolo"));
+  }
 
   if (mqttClient.connect(MQTT_CLIENT_ID, MQTT_USER, MQTT_PASSWORD)) {
-    Serial.println(F("MQTT: connesso"));
+    if (LOG.mqtt) {
+      Serial.println(F("MQTT: connesso"));
+    }
     return true;
   }
 
   const int state = mqttClient.state();
-  Serial.print(F("MQTT: connessione non riuscita, ultimo state: "));
-  Serial.print(state);
-  Serial.print(F(" ("));
-  Serial.print(mqttStateName(state));
-  Serial.println(F(")"));
+  if (LOG.mqtt) {
+    Serial.print(F("MQTT: connessione non riuscita, ultimo state: "));
+    Serial.print(state);
+    Serial.print(F(" ("));
+    Serial.print(mqttStateName(state));
+    Serial.println(F(")"));
+  }
 
-  if (state == MQTT_CONNECT_BAD_CREDENTIALS || state == MQTT_CONNECT_UNAUTHORIZED) {
+  if (LOG.mqtt && (state == MQTT_CONNECT_BAD_CREDENTIALS || state == MQTT_CONNECT_UNAUTHORIZED)) {
     Serial.println(F("MQTT: errore autenticazione, controllo user/password o permessi broker necessario"));
   }
 
@@ -552,7 +600,9 @@ void chooseActivityTargets(const char *activity, int &targetAtt, int &targetMed)
 
 void sendSimulatedEEG() {
   if (!activityRunning) {
-    Serial.println(F("MQTT: publish annullato, attivita non avviata"));
+    if (LOG.mqtt) {
+      Serial.println(F("MQTT: publish annullato, attivita non avviata"));
+    }
     return;
   }
 
@@ -615,23 +665,31 @@ void sendSimulatedEEG() {
   const size_t payloadSize = serializeJson(doc, buffer, sizeof(buffer));
 
   if (!connectToMqtt()) {
-    Serial.println(F("MQTT: errore, broker non connesso"));
+    if (LOG.mqtt) {
+      Serial.println(F("MQTT: errore, broker non connesso"));
+    }
     return;
   }
 
   if (!activityRunning) {
-    Serial.println(F("MQTT: publish annullato dopo connessione, attivita fermata"));
+    if (LOG.mqtt) {
+      Serial.println(F("MQTT: publish annullato dopo connessione, attivita fermata"));
+    }
     return;
   }
 
   const bool published = mqttClient.publish(MQTT_TOPIC, buffer, payloadSize);
-  Serial.print(F("MQTT: publish topic: "));
-  Serial.print(MQTT_TOPIC);
-  Serial.print(F(" | bytes: "));
-  Serial.print(payloadSize);
-  Serial.print(F(" | esito: "));
-  Serial.println(published ? F("ok") : F("fallito"));
-  Serial.println(buffer);
+  if (LOG.mqtt) {
+    Serial.print(F("MQTT: publish topic: "));
+    Serial.print(MQTT_TOPIC);
+    Serial.print(F(" | bytes: "));
+    Serial.print(payloadSize);
+    Serial.print(F(" | esito: "));
+    Serial.println(published ? F("ok") : F("fallito"));
+  }
+  if (LOG.eeg) {
+    Serial.println(buffer);
+  }
 }
 
 void handleMqttStreaming() {
@@ -644,14 +702,16 @@ void handleMqttStreaming() {
   const unsigned long now = millis();
   if (now - lastMqttPublishAt >= MQTT_PUBLISH_INTERVAL_MS) {
     lastMqttPublishAt = now;
-    Serial.print(F("EEG: tick streaming | interval ms: "));
-    Serial.print(MQTT_PUBLISH_INTERVAL_MS);
-    Serial.print(F(" | activity: "));
-    Serial.print(mqttActivityName());
-    Serial.print(F(" | WiFi: "));
-    Serial.print(wifiStatusName(WiFi.status()));
-    Serial.print(F(" | MQTT: "));
-    Serial.println(mqttClient.connected() ? F("connesso") : F("non connesso"));
+    if (LOG.eeg) {
+      Serial.print(F("EEG: tick streaming | interval ms: "));
+      Serial.print(MQTT_PUBLISH_INTERVAL_MS);
+      Serial.print(F(" | activity: "));
+      Serial.print(mqttActivityName());
+      Serial.print(F(" | WiFi: "));
+      Serial.print(wifiStatusName(WiFi.status()));
+      Serial.print(F(" | MQTT: "));
+      Serial.println(mqttClient.connected() ? F("connesso") : F("non connesso"));
+    }
     sendSimulatedEEG();
   }
 }
@@ -681,19 +741,21 @@ void calibrateJoystick() {
   joystickUpDelta = calculateMoveDelta(joystickCenterY);
   joystickDownDelta = calculateMoveDelta(ADC_MAX_VALUE - joystickCenterY);
 
-  Serial.print(F("Joystick calibrato | X centro: "));
-  Serial.print(joystickCenterX);
-  Serial.print(F(" | Y centro: "));
-  Serial.println(joystickCenterY);
+  if (LOG.joystickRaw) {
+    Serial.print(F("Joystick calibrato | X centro: "));
+    Serial.print(joystickCenterX);
+    Serial.print(F(" | Y centro: "));
+    Serial.println(joystickCenterY);
 
-  Serial.print(F("Soglie | left: -"));
-  Serial.print(joystickLeftDelta);
-  Serial.print(F(" | right: +"));
-  Serial.print(joystickRightDelta);
-  Serial.print(F(" | up: -"));
-  Serial.print(joystickUpDelta);
-  Serial.print(F(" | down: +"));
-  Serial.println(joystickDownDelta);
+    Serial.print(F("Soglie | left: -"));
+    Serial.print(joystickLeftDelta);
+    Serial.print(F(" | right: +"));
+    Serial.print(joystickRightDelta);
+    Serial.print(F(" | up: -"));
+    Serial.print(joystickUpDelta);
+    Serial.print(F(" | down: +"));
+    Serial.println(joystickDownDelta);
+  }
 }
 
 bool joystickIsReleased() {
@@ -727,6 +789,10 @@ Direction readJoystick() {
 }
 
 void printJoystickPositionDebug() {
+  if (!LOG.joystickRaw) {
+    return;
+  }
+
   const unsigned long now = millis();
 
   if (now - lastJoystickDebugAt < JOY_DEBUG_INTERVAL_MS) {
@@ -868,6 +934,10 @@ const char *currentItemName() {
 }
 
 void printActionResult(Direction direction, Screen previousScreen, const char *previousItem) {
+  if (!LOG.joystickActions) {
+    return;
+  }
+
   Serial.print(F("Joystick: "));
   Serial.println(directionName(direction));
 
