@@ -136,6 +136,8 @@ float currentWaves[8] = {
 
 const char *directionName(Direction direction);
 const char *currentItemName();
+bool stopActivity();
+bool stopActivityIfStopSelected();
 
 void drawCenteredText(const char *text, int16_t y, uint8_t textSize) {
   int16_t x1;
@@ -771,21 +773,32 @@ Direction readJoystick() {
   const int yValue = analogRead(JOY_Y_PIN);
   const int xDelta = xValue - joystickCenterX;
   const int yDelta = yValue - joystickCenterY;
+  Direction xDirection = DIR_NONE;
+  Direction yDirection = DIR_NONE;
+  int xScore = 0;
+  int yScore = 0;
 
   if (xDelta < -joystickLeftDelta) {
-    return DIR_LEFT;
-  }
-  if (xDelta > joystickRightDelta) {
-    return DIR_RIGHT;
-  }
-  if (yDelta > joystickDownDelta) {
-    return DIR_DOWN;
-  }
-  if (yDelta < -joystickUpDelta) {
-    return DIR_UP;
+    xDirection = DIR_LEFT;
+    xScore = ((-xDelta) * 100) / joystickLeftDelta;
+  } else if (xDelta > joystickRightDelta) {
+    xDirection = DIR_RIGHT;
+    xScore = (xDelta * 100) / joystickRightDelta;
   }
 
-  return DIR_NONE;
+  if (yDelta > joystickDownDelta) {
+    yDirection = DIR_DOWN;
+    yScore = (yDelta * 100) / joystickDownDelta;
+  } else if (yDelta < -joystickUpDelta) {
+    yDirection = DIR_UP;
+    yScore = ((-yDelta) * 100) / joystickUpDelta;
+  }
+
+  if (xDirection == DIR_NONE && yDirection == DIR_NONE) {
+    return DIR_NONE;
+  }
+
+  return yScore >= xScore ? yDirection : xDirection;
 }
 
 void printJoystickPositionDebug() {
@@ -853,9 +866,7 @@ void nextModeMenuItem() {
 void confirmMainMenuItem() {
   if (mainMenuIndex == 0) {
     if (activityRunning) {
-      activityRunning = false;
-      lastMqttPublishAt = 0;
-      Serial.println(F("EEG: streaming simulato fermato"));
+      stopActivity();
     } else {
       activityRunning = true;
       lastMqttPublishAt = 0;
@@ -873,6 +884,27 @@ void confirmMainMenuItem() {
   if (strcmp(mainMenuItems[mainMenuIndex], "Modalita") == 0) {
     currentScreen = SCREEN_MODE_MENU;
   }
+}
+
+bool stopActivity() {
+  if (!activityRunning) {
+    return false;
+  }
+
+  activityRunning = false;
+  lastMqttPublishAt = 0;
+  mainMenuIndex = 0;
+  currentScreen = SCREEN_MAIN_MENU;
+
+  if (LOG.eeg) {
+    Serial.println(F("EEG: streaming simulato fermato"));
+  }
+
+  return true;
+}
+
+bool stopActivityIfStopSelected() {
+  return currentScreen == SCREEN_MAIN_MENU && mainMenuIndex == 0 && activityRunning && stopActivity();
 }
 
 void confirmModeMenuItem() {
@@ -944,7 +976,10 @@ void printActionResult(Direction direction, Screen previousScreen, const char *p
   Serial.print(F("Azione: "));
   switch (direction) {
     case DIR_LEFT:
-      if (previousScreen == currentScreen) {
+      if (previousScreen == SCREEN_MAIN_MENU && strcmp(previousItem, "Stop") == 0 && !activityRunning) {
+        Serial.print(F("stop routine: "));
+        Serial.println(selectedActivity);
+      } else if (previousScreen == currentScreen) {
         Serial.println(F("indietro ignorato"));
       } else {
         Serial.println(F("ritorno al menu principale"));
@@ -975,7 +1010,12 @@ void printActionResult(Direction direction, Screen previousScreen, const char *p
       }
       break;
     case DIR_UP:
-      Serial.println(F("su ignorato"));
+      if (previousScreen == SCREEN_MAIN_MENU && strcmp(previousItem, "Stop") == 0 && !activityRunning) {
+        Serial.print(F("stop routine: "));
+        Serial.println(selectedActivity);
+      } else {
+        Serial.println(F("su ignorato"));
+      }
       break;
     case DIR_NONE:
       Serial.println(F("nessuna azione"));
@@ -998,7 +1038,9 @@ void handleDirection(Direction direction) {
 
   switch (direction) {
     case DIR_LEFT:
-      goBack();
+      if (!stopActivityIfStopSelected()) {
+        goBack();
+      }
       break;
     case DIR_RIGHT:
       if (currentScreen == SCREEN_MAIN_MENU) {
@@ -1015,6 +1057,8 @@ void handleDirection(Direction direction) {
       }
       break;
     case DIR_UP:
+      stopActivityIfStopSelected();
+      break;
     case DIR_NONE:
       break;
   }
