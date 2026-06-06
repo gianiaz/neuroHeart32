@@ -42,7 +42,7 @@ public:
   void drawTestScreen();
 
   // Schermata iniziale minima usata nel bring-up firmware.
-  void drawFirmwareInfo(const char *firmwareVersion);
+  void drawFirmwareInfo(const char *projectName, const char *firmwareVersion);
 
   bool isReady() const;
   uint8_t address() const;

@@ -24,11 +24,11 @@ void AppController::setup() {
   _oled.clear();
 
   if (mainLoggingEnabled()) {
-    _logger.mainFirmwareInfo(_config.firmwareVersion);
+    _logger.mainFirmwareInfo(_config.projectName, _config.firmwareVersion);
     _logger.mainOledInitialized(_oled.sdaPin(), _oled.sclPin(), _oled.i2cAddress());
   }
 
-  _oled.drawFirmwareInfo(_config.firmwareVersion);
+  _oled.drawFirmwareInfo(_config.projectName, _config.firmwareVersion);
   _oled.printStatus();
 }
 
@@ -39,7 +39,8 @@ void AppController::loop(unsigned long nowMs) {
 
   _startupReportPrinted = true;
   if (mainLoggingEnabled()) {
-    _logger.mainDelayedStartupReport(_config.firmwareVersion, _oled.sdaPin(), _oled.sclPin(), _oledReady);
+    _logger.mainDelayedStartupReport(
+        _config.projectName, _config.firmwareVersion, _oled.sdaPin(), _oled.sclPin(), _oledReady);
   }
 }
 

@@ -31,7 +31,7 @@ void setup() {
   display.setTextSize(1);             // Dimensione testo piccola
   display.setTextColor(SSD1306_WHITE); // Colore bianco
   display.setCursor(0,0);             // Inizia dall'angolo in alto a sinistra
-  display.println("SISTEMA EEG V1.0");
+  display.println("NeuroHearh32 V1.0");
   display.println("---------------------");
   
   display.setTextSize(2);             // Testo più grande

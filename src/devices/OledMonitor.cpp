@@ -128,7 +128,7 @@ void OledMonitor::drawTestScreen() {
   _display.display();
 }
 
-void OledMonitor::drawFirmwareInfo(const char *firmwareVersion) {
+void OledMonitor::drawFirmwareInfo(const char *projectName, const char *firmwareVersion) {
   if (!_ready) {
     return;
   }
@@ -138,7 +138,7 @@ void OledMonitor::drawFirmwareInfo(const char *firmwareVersion) {
   _display.setTextSize(1);
 
   _display.setCursor(0, 0);
-  _display.println(F("EEG Monitor"));
+  _display.println(projectName);
 
   _display.setCursor(0, 16);
   _display.print(F("Firmware: "));

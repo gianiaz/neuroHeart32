@@ -9,10 +9,11 @@ public:
   virtual ~AppLogger() = default;
 
   virtual void mainInitializationStarted() = 0;
-  virtual void mainFirmwareInfo(const char *firmwareVersion) = 0;
+  virtual void mainFirmwareInfo(const char *projectName, const char *firmwareVersion) = 0;
   virtual void mainOledInitialized(uint8_t sdaPin, uint8_t sclPin, uint8_t i2cAddress) = 0;
   virtual void mainOledInitializationFailed() = 0;
-  virtual void mainDelayedStartupReport(const char *firmwareVersion,
+  virtual void mainDelayedStartupReport(const char *projectName,
+                                        const char *firmwareVersion,
                                         uint8_t sdaPin,
                                         uint8_t sclPin,
                                         bool oledReady) = 0;
@@ -24,7 +25,7 @@ public:
 
   virtual bool begin() = 0;
   virtual void clear() = 0;
-  virtual void drawFirmwareInfo(const char *firmwareVersion) = 0;
+  virtual void drawFirmwareInfo(const char *projectName, const char *firmwareVersion) = 0;
   virtual void printStatus() = 0;
   virtual uint8_t sdaPin() const = 0;
   virtual uint8_t sclPin() const = 0;
@@ -32,6 +33,7 @@ public:
 };
 
 struct AppControllerConfig {
+  const char *projectName;
   const char *firmwareVersion;
   unsigned long startupReportDelayMs;
   LogConfig log;

@@ -7,6 +7,7 @@
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
+#define PROJECT_NAME "NeuroHearh32"
 #define FIRMWARE_VERSION "0.0.1"
 #define SERIAL_STARTUP_WAIT_MS 10000
 #define STARTUP_REPORT_DELAY_MS 2000
@@ -42,7 +43,9 @@ public:
     _logger.println(F("MAIN | Inizializzazione su main"));
   }
 
-  void mainFirmwareInfo(const char *firmwareVersion) override {
+  void mainFirmwareInfo(const char *projectName, const char *firmwareVersion) override {
+    _logger.print(F("MAIN | Progetto: "));
+    _logger.println(projectName);
     _logger.print(F("MAIN | Firmware: "));
     _logger.println(firmwareVersion);
   }
@@ -60,11 +63,14 @@ public:
     _logger.println(F("MAIN | ERRORE: Display non trovato. Controlla le saldature!"));
   }
 
-  void mainDelayedStartupReport(const char *firmwareVersion,
+  void mainDelayedStartupReport(const char *projectName,
+                                const char *firmwareVersion,
                                 uint8_t sdaPin,
                                 uint8_t sclPin,
                                 bool oledReady) override {
     _logger.println(F("MAIN | Inizializzazione su main"));
+    _logger.print(F("MAIN | Progetto: "));
+    _logger.println(projectName);
     _logger.print(F("MAIN | Firmware: "));
     _logger.println(firmwareVersion);
     _logger.print(F("MAIN | OLED pin | SDA: GPIO"));
@@ -93,8 +99,8 @@ public:
     _oled.clear();
   }
 
-  void drawFirmwareInfo(const char *firmwareVersion) override {
-    _oled.drawFirmwareInfo(firmwareVersion);
+  void drawFirmwareInfo(const char *projectName, const char *firmwareVersion) override {
+    _oled.drawFirmwareInfo(projectName, firmwareVersion);
   }
 
   void printStatus() override {
@@ -119,6 +125,7 @@ private:
 };
 
 const AppControllerConfig APP_CONFIG = {
+  PROJECT_NAME,
   FIRMWARE_VERSION,
   STARTUP_REPORT_DELAY_MS,
   LOG

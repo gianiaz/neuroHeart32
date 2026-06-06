@@ -2,6 +2,7 @@
 
 ## 0.0.1
 
+- Rinominato il progetto in NeuroHearh32.
 - Configurata la build PlatformIO per ESP32-C3 SuperMini.
 - Aggiunto logger centralizzato tramite `LoggerInterface` e `SerialLogger`.
 - Estratta la gestione OLED in `OledMonitor`.

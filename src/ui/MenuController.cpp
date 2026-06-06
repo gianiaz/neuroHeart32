@@ -230,7 +230,7 @@ void MenuController::drawHeader() {
   _oled.display().setTextSize(1);
   _oled.display().setTextColor(SSD1306_WHITE);
   _oled.display().setCursor(0, 1);
-  _oled.display().print("EEG Monitor");
+  _oled.display().print("NeuroHearh32");
   _oled.display().drawLine(74, 0, 74, 9, SSD1306_WHITE);
   drawWifiIcon(88, 1);
 }

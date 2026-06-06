@@ -14,8 +14,8 @@ public:
     events.push_back("log:init");
   }
 
-  void mainFirmwareInfo(const char *firmwareVersion) override {
-    events.push_back(std::string("log:firmware:") + firmwareVersion);
+  void mainFirmwareInfo(const char *projectName, const char *firmwareVersion) override {
+    events.push_back(std::string("log:firmware:") + projectName + ":" + firmwareVersion);
   }
 
   void mainOledInitialized(uint8_t sdaPin, uint8_t sclPin, uint8_t i2cAddress) override {
@@ -29,11 +29,12 @@ public:
     events.push_back("log:oled-failed");
   }
 
-  void mainDelayedStartupReport(const char *firmwareVersion,
+  void mainDelayedStartupReport(const char *projectName,
+                                const char *firmwareVersion,
                                 uint8_t sdaPin,
                                 uint8_t sclPin,
                                 bool oledReady) override {
-    events.push_back(std::string("log:delayed:") + firmwareVersion);
+    events.push_back(std::string("log:delayed:") + projectName + ":" + firmwareVersion);
     lastSdaPin = sdaPin;
     lastSclPin = sclPin;
     lastDelayedOledReady = oledReady;
@@ -59,8 +60,8 @@ public:
     calls.push_back("oled:clear");
   }
 
-  void drawFirmwareInfo(const char *firmwareVersion) override {
-    calls.push_back(std::string("oled:draw:") + firmwareVersion);
+  void drawFirmwareInfo(const char *projectName, const char *firmwareVersion) override {
+    calls.push_back(std::string("oled:draw:") + projectName + ":" + firmwareVersion);
   }
 
   void printStatus() override {
@@ -91,6 +92,7 @@ void tearDown() {
 
 AppControllerConfig testConfig(bool mainLoggingEnabled = true) {
   return {
+    "NeuroHearh32",
     "0.0.1",
     2000,
     {
@@ -114,7 +116,7 @@ void test_setup_initializes_oled_and_draws_firmware_when_oled_begin_succeeds() {
 
   TEST_ASSERT_TRUE(app.oledReady());
   TEST_ASSERT_EQUAL_STRING("log:init", logger.events[0].c_str());
-  TEST_ASSERT_EQUAL_STRING("log:firmware:0.0.1", logger.events[1].c_str());
+  TEST_ASSERT_EQUAL_STRING("log:firmware:NeuroHearh32:0.0.1", logger.events[1].c_str());
   TEST_ASSERT_EQUAL_STRING("log:oled-ready", logger.events[2].c_str());
   TEST_ASSERT_EQUAL_UINT8(5, logger.lastSdaPin);
   TEST_ASSERT_EQUAL_UINT8(6, logger.lastSclPin);
@@ -122,7 +124,7 @@ void test_setup_initializes_oled_and_draws_firmware_when_oled_begin_succeeds() {
 
   TEST_ASSERT_EQUAL_STRING("oled:begin", oled.calls[0].c_str());
   TEST_ASSERT_EQUAL_STRING("oled:clear", oled.calls[1].c_str());
-  TEST_ASSERT_EQUAL_STRING("oled:draw:0.0.1", oled.calls[2].c_str());
+  TEST_ASSERT_EQUAL_STRING("oled:draw:NeuroHearh32:0.0.1", oled.calls[2].c_str());
   TEST_ASSERT_EQUAL_STRING("oled:status", oled.calls[3].c_str());
 }
 
@@ -151,7 +153,7 @@ void test_delayed_startup_report_is_printed_once_after_configured_delay() {
 
   app.loop(2000);
   TEST_ASSERT_TRUE(app.startupReportPrinted());
-  TEST_ASSERT_EQUAL_STRING("log:delayed:0.0.1", logger.events.back().c_str());
+  TEST_ASSERT_EQUAL_STRING("log:delayed:NeuroHearh32:0.0.1", logger.events.back().c_str());
   TEST_ASSERT_TRUE(logger.lastDelayedOledReady);
 
   const size_t eventCount = logger.events.size();
