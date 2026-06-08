@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.2
+
+- Aggiunta schermata OLED iniziale con nome progetto, versione, separatore e menu principale.
+- Aggiunto menu principale orizzontale con voci `Mode` e `Informazioni`.
+- Aggiunti indicatori laterali a triangolo per mostrare le direzioni disponibili nel menu.
+- Aggiunto stato di navigazione testabile per il menu principale con test Unity dedicati.
+- Conservato il logo OLED come asset bitmap per utilizzi futuri.
+
 ## 0.0.1
 
 - Rinominato il progetto in NeuroHearh32.

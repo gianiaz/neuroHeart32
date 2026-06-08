@@ -5,12 +5,12 @@
 #include "core/SerialLogger.h"
 #include "devices/OledMonitor.h"
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define PROJECT_NAME "NeuroHearh32"
-#define FIRMWARE_VERSION "0.0.1"
-#define SERIAL_STARTUP_WAIT_MS 10000
-#define STARTUP_REPORT_DELAY_MS 2000
+constexpr uint8_t SCREEN_WIDTH = 128;
+constexpr uint8_t SCREEN_HEIGHT = 64;
+constexpr const char *PROJECT_NAME = "NeuroHeart32";
+constexpr const char *FIRMWARE_VERSION = "0.0.2";
+constexpr unsigned long SERIAL_STARTUP_WAIT_MS = 10000;
+constexpr unsigned long STARTUP_REPORT_DELAY_MS = 2000;
 
 const LogConfig LOG = {
   true,  // main

@@ -138,20 +138,25 @@ void OledMonitor::drawFirmwareInfo(const char *projectName, const char *firmware
   _display.setTextSize(1);
 
   _display.setCursor(0, 0);
-  _display.println(projectName);
+  _display.print(projectName);
 
-  _display.setCursor(0, 16);
-  _display.print(F("Firmware: "));
-  _display.println(firmwareVersion);
+  _display.setCursor(0, 10);
+  _display.print(F("Version: "));
+  _display.print(firmwareVersion);
 
-  _display.setCursor(0, 32);
-  _display.print(F("OLED SDA: GPIO"));
-  _display.println(_config.sdaPin);
+  _display.drawLine(0, 22, _config.width - 1, 22, SSD1306_WHITE);
 
-  _display.setCursor(0, 44);
-  _display.print(F("OLED SCL: GPIO"));
-  _display.println(_config.sclPin);
+  int16_t x1;
+  int16_t y1;
+  uint16_t w;
+  uint16_t h;
+  const char *initialMenuItem = "Mode";
+  _display.setTextSize(2);
+  _display.getTextBounds(initialMenuItem, 0, 38, &x1, &y1, &w, &h);
+  _display.setCursor((_config.width - w) / 2, 38);
+  _display.print(initialMenuItem);
 
+  _display.fillTriangle(122, 41, 122, 51, 127, 46, SSD1306_WHITE);
   _display.display();
 }
 

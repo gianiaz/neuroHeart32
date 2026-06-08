@@ -92,8 +92,8 @@ void tearDown() {
 
 AppControllerConfig testConfig(bool mainLoggingEnabled = true) {
   return {
-    "NeuroHearh32",
-    "0.0.1",
+    "NeuroHeart32",
+    "0.0.2",
     2000,
     {
       mainLoggingEnabled, // main
@@ -116,7 +116,7 @@ void test_setup_initializes_oled_and_draws_firmware_when_oled_begin_succeeds() {
 
   TEST_ASSERT_TRUE(app.oledReady());
   TEST_ASSERT_EQUAL_STRING("log:init", logger.events[0].c_str());
-  TEST_ASSERT_EQUAL_STRING("log:firmware:NeuroHearh32:0.0.1", logger.events[1].c_str());
+  TEST_ASSERT_EQUAL_STRING("log:firmware:NeuroHeart32:0.0.2", logger.events[1].c_str());
   TEST_ASSERT_EQUAL_STRING("log:oled-ready", logger.events[2].c_str());
   TEST_ASSERT_EQUAL_UINT8(5, logger.lastSdaPin);
   TEST_ASSERT_EQUAL_UINT8(6, logger.lastSclPin);
@@ -124,7 +124,7 @@ void test_setup_initializes_oled_and_draws_firmware_when_oled_begin_succeeds() {
 
   TEST_ASSERT_EQUAL_STRING("oled:begin", oled.calls[0].c_str());
   TEST_ASSERT_EQUAL_STRING("oled:clear", oled.calls[1].c_str());
-  TEST_ASSERT_EQUAL_STRING("oled:draw:NeuroHearh32:0.0.1", oled.calls[2].c_str());
+  TEST_ASSERT_EQUAL_STRING("oled:draw:NeuroHeart32:0.0.2", oled.calls[2].c_str());
   TEST_ASSERT_EQUAL_STRING("oled:status", oled.calls[3].c_str());
 }
 
@@ -153,7 +153,7 @@ void test_delayed_startup_report_is_printed_once_after_configured_delay() {
 
   app.loop(2000);
   TEST_ASSERT_TRUE(app.startupReportPrinted());
-  TEST_ASSERT_EQUAL_STRING("log:delayed:NeuroHearh32:0.0.1", logger.events.back().c_str());
+  TEST_ASSERT_EQUAL_STRING("log:delayed:NeuroHeart32:0.0.2", logger.events.back().c_str());
   TEST_ASSERT_TRUE(logger.lastDelayedOledReady);
 
   const size_t eventCount = logger.events.size();

@@ -10,15 +10,15 @@ const MenuController::MenuItem MODE_ITEMS[] = {
 };
 
 const MenuController::MenuPage MODE_PAGE = {
-  "Modalita",
+  "Mode",
   &HOME_PAGE,
   MODE_ITEMS,
   sizeof(MODE_ITEMS) / sizeof(MODE_ITEMS[0])
 };
 
 const MenuController::MenuItem HOME_ITEMS[] = {
-  {"", nullptr, MenuController::MENU_ACTION_TOGGLE_ACTIVITY, nullptr, nullptr},
-  {"Modalita", &MODE_PAGE, MenuController::MENU_ACTION_NONE, nullptr, nullptr}
+  {"Mode", &MODE_PAGE, MenuController::MENU_ACTION_NONE, nullptr, nullptr},
+  {"Informazioni", nullptr, MenuController::MENU_ACTION_NONE, nullptr, nullptr}
 };
 
 const MenuController::MenuPage HOME_PAGE = {
@@ -37,6 +37,7 @@ MenuController::MenuController(const MenuControllerConfig &config, OledMonitor &
     : _config(config),
       _oled(oled),
       _logger(logger),
+      _mainMenuState(),
       _currentPage(&HOME_PAGE),
       _selectedIndex(0),
       _selectedActivityLabel("Meditazione"),
@@ -76,18 +77,14 @@ void MenuController::draw() {
 
   drawFrame();
 
-  _oled.display().setTextSize(1);
-  _oled.display().setCursor(0, 16);
-
-  if (_currentPage == &HOME_PAGE) {
-    _oled.display().print(_activityRunning ? "Avviata:" : "Attivita:");
-    _oled.display().setCursor(58, 16);
-    _oled.display().print(_selectedActivityLabel);
-  } else {
+  if (_currentPage != &HOME_PAGE) {
+    _oled.display().setTextSize(1);
+    _oled.display().setCursor(0, 26);
     _oled.display().print(_currentPage->title);
   }
 
-  drawCenteredText(currentItemLabel(), 31, 2);
+  drawCenteredText(currentItemLabel(), 38, 2);
+  drawNavigationArrows();
   _oled.display().display();
 }
 
@@ -136,13 +133,25 @@ const char *MenuController::selectedActivityKey() const {
 }
 
 void MenuController::moveNext() {
-  _selectedIndex = (_selectedIndex + 1) % _currentPage->itemCount;
+  if (_currentPage == &HOME_PAGE) {
+    _mainMenuState.moveNext();
+    _selectedIndex = _mainMenuState.selectedIndex();
+    return;
+  }
+
+  if (_selectedIndex + 1 < _currentPage->itemCount) {
+    _selectedIndex++;
+  }
 }
 
 void MenuController::movePrevious() {
-  if (_selectedIndex == 0) {
-    _selectedIndex = _currentPage->itemCount - 1;
-  } else {
+  if (_currentPage == &HOME_PAGE) {
+    _mainMenuState.movePrevious();
+    _selectedIndex = _mainMenuState.selectedIndex();
+    return;
+  }
+
+  if (_selectedIndex > 0) {
     _selectedIndex--;
   }
 }
@@ -186,6 +195,9 @@ void MenuController::cancel() {
 void MenuController::goToPage(const MenuPage *page) {
   _currentPage = page;
   _selectedIndex = 0;
+  if (_currentPage == &HOME_PAGE) {
+    _mainMenuState.reset();
+  }
 }
 
 const MenuController::MenuItem &MenuController::currentItem() const {
@@ -193,6 +205,10 @@ const MenuController::MenuItem &MenuController::currentItem() const {
 }
 
 const char *MenuController::currentItemLabel() const {
+  if (_currentPage == &HOME_PAGE) {
+    return _mainMenuState.currentLabel();
+  }
+
   const MenuItem &item = currentItem();
   if (item.action == MENU_ACTION_TOGGLE_ACTIVITY) {
     return _activityRunning ? "Stop" : "Start";
@@ -217,22 +233,30 @@ void MenuController::drawFrame() {
   _oled.display().clearDisplay();
   _oled.display().setTextColor(SSD1306_WHITE);
   drawHeader();
-  _oled.display().drawLine(0, _config.headerBottomY, _config.width - 1, _config.headerBottomY, SSD1306_WHITE);
-  _oled.display().drawLine(0, _config.footerTopY, _config.width - 1, _config.footerTopY, SSD1306_WHITE);
-
-  _oled.display().setTextSize(1);
-  _oled.display().setCursor(0, 56);
-  _oled.display().print("Mode: ");
-  _oled.display().print(_selectedActivityLabel);
+  _oled.display().drawLine(0, 22, _config.width - 1, 22, SSD1306_WHITE);
 }
 
 void MenuController::drawHeader() {
   _oled.display().setTextSize(1);
   _oled.display().setTextColor(SSD1306_WHITE);
-  _oled.display().setCursor(0, 1);
-  _oled.display().print("NeuroHearh32");
-  _oled.display().drawLine(74, 0, 74, 9, SSD1306_WHITE);
-  drawWifiIcon(88, 1);
+  _oled.display().setCursor(0, 0);
+  _oled.display().print(_config.projectName);
+  _oled.display().setCursor(0, 10);
+  _oled.display().print("Version: ");
+  _oled.display().print(_config.firmwareVersion);
+}
+
+void MenuController::drawNavigationArrows() {
+  const bool hasPrevious = _currentPage == &HOME_PAGE ? _mainMenuState.hasPrevious() : _selectedIndex > 0;
+  const bool hasNext = _currentPage == &HOME_PAGE ? _mainMenuState.hasNext() : _selectedIndex + 1 < _currentPage->itemCount;
+
+  if (hasPrevious) {
+    _oled.display().fillTriangle(0, 46, 5, 41, 5, 51, SSD1306_WHITE);
+  }
+
+  if (hasNext) {
+    _oled.display().fillTriangle(_config.width - 6, 41, _config.width - 6, 51, _config.width - 1, 46, SSD1306_WHITE);
+  }
 }
 
 void MenuController::drawWifiIcon(int16_t x, int16_t y) {

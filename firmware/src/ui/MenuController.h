@@ -5,6 +5,7 @@
 #include "../connectivity/WifiManager.h"
 #include "../core/LoggerInterface.h"
 #include "../devices/OledMonitor.h"
+#include "MainMenuState.h"
 
 enum MenuInput {
   MENU_INPUT_PLUS,
@@ -27,6 +28,8 @@ struct MenuEvent {
 };
 
 struct MenuControllerConfig {
+  const char *projectName;
+  const char *firmwareVersion;
   uint8_t width;
   uint8_t height;
   uint8_t headerBottomY;
@@ -83,6 +86,7 @@ private:
   void drawCenteredText(const char *text, int16_t y, uint8_t textSize);
   void drawFrame();
   void drawHeader();
+  void drawNavigationArrows();
   void drawWifiIcon(int16_t x, int16_t y);
   void drawWifiDisconnectedIcon(int16_t x, int16_t y);
   void drawWifiConnectedIcon(int16_t x, int16_t y);
@@ -92,6 +96,7 @@ private:
   MenuControllerConfig _config;
   OledMonitor &_oled;
   LoggerInterface &_logger;
+  MainMenuState _mainMenuState;
   const MenuPage *_currentPage;
   uint8_t _selectedIndex;
   const char *_selectedActivityLabel;
